@@ -1,0 +1,43 @@
+--- Backlog Created 1/18/17 ---
+--- Backlog Contains Tasks to Complete by 1/30 ---
+
+Important Note:
+ - For each task, proper testing and documentation should
+   be enacted to insure completion and understanding for each
+   functionality of the project.
+
+Syntax of Creating Tasks:
+- Task_Name            Ranking_of_Task
+  - Assigned_Person_to_Complete_Task 
+
+Tasks:                                                        Rank:  
+- Fix any concurrency issues with reading and writing logs
+  - May need to add some semaphores to the task above
+  - Jessie
+- Implement 5 logs for testing all hosts (this won't matter 
+  for raspberry pi's)
+  - Fred
+- Proper HAndling of AppendEntries Messages (Log Entries)
+  - Jessie
+
+- Make a script to start all connections in the raspberry pi's 
+- Implement Leader commit Logic
+  - Fred   
+- Fix when return False in transitions    
+- Implement logs to hold messages
+  - Jessie and Fred
+- Set up concurrency of threads correctly
+- Complete system testing
+- May need to use a dictionary to store all logs
+  - The reason for this is because it might be beneficial to
+    have to have a certified index in the message that would
+    indicate that it is the key for that Log Entry. Order 
+    won't matter then.
+    Ex: [0:Log1, 4:Log5, 2:Log3]
+- Implement logic to delete logs if the logs are not the same
+- May want to make a static variable of the python dictionary so it can be shared by all instances.
+- Serialize python dictionaries to JSON
+- Implement logic to delete entries in a log
+- Design or talk to Dr.Esposito about to present a demo of Raft
+- Write to a script/come up something to monitor the internal state of the algorithm for debugging purposes
+  - Find a way to show any updated entries inside the log and monitor the logs in general
