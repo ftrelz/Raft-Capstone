@@ -9,6 +9,8 @@ import random
 import math
 import queue
 import os
+import RestfulRaft
+import pdb
 
 class Server:
     def __init__(self):
@@ -53,6 +55,11 @@ class Server:
         self.timer = threading.Timer(self.electionTimeout, self.transition, ('Candidate',))
         self.timer.start()
         self.heartbeatTimeout = 5
+
+        # create placeholder for our RestAPI reference
+        self.RestAPI = None
+
+    def start(self):
         self.listen()
 
     def listen(self):
@@ -110,6 +117,9 @@ class Server:
             elif state == 'Leader':
                 self.StateInfo = State.LeaderState(self.StateInfo.term, self.NodeAddrs, self.logFileName, savedLog)
                 self.heartbeat()
+                pdb.set_trace()
+                self.RestAPI = RestfulRaft.RestAPI(self.RestAPICallback)
+                self.RestAPI.start()
             self.StateSemaphore.release()
             successfulTransition = True
         return successfulTransition
@@ -143,7 +153,7 @@ class Server:
                 outgoingMessage.aem.CopyFrom(messageTuple[1])
             elif messageTuple[0] == protoc.APPENDREPLY:
                 outgoingMessage.arm.CopyFrom(messageTuple[1])
-          
+
             self.Socket.sendto(outgoingMessage.SerializeToString(), (messageTuple[1].toAddr, messageTuple[1].toPort))
 
     def messageHandler(self, messageData):
@@ -178,13 +188,13 @@ class Server:
         # if the term number is valid, the normal rules for the current state
         # apply
         replyMessageType, replyMessage = self.StateInfo.handleMessage(messageType, innerMessage)
-        
+
         if self.isFollower():
             # only responsibility is to respond to messages from Candidates and
             # leaders
             if replyMessageType == protoc.APPENDREPLY and replyMessage.success:
                 self.resetTimer()
-            
+
             if replyMessageType is not None:
                 self.outgoingMessageQ.put_nowait((replyMessageType, replyMessage))
         elif self.isCandidate():
@@ -200,11 +210,22 @@ class Server:
                     # if vote, check to see if we won
                     self.transition('Leader')
         elif self.isLeader():
-            # until we implement logs we don't need to do anything here
             if replyMessageType is not None:
                 replyMessage.toAddr = innerMessage.fromAddr
                 replyMessage.toPort = innerMessage.fromPort
                 self.outgoingMessageQ.put_nowait((replyMessageType, replyMessage))
+
+    # This function allows the RestAPI to pass incoming client requests
+    # to the server
+    def RestAPICallback(self, requestString):
+        # if we aren't leader we shouldn't be processing client requests
+        assert self.isLeader()
+        messageType, logEntryMessage = self.StateInfo.createLogEntry(requestString)
+        for server in self.NodeAddrs:
+            print("This is the addr: " + server[0])
+            print("This is the port: " + str(server[1]))
+            messageType,outgoingMessage = self.StateInfo.createAppendEntries(server[0], server[1], [logEntryMessage,])
+            self.outgoingMessageQ.put_nowait((messageType, outgoingMessage))
 
     def clientListenerThread(self):
         while True:
