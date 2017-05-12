@@ -13,31 +13,25 @@ class RestAPI():
 
     def mainServerLoop():
         self.listenSocket.bind(("0.0.0.0", 8080))
-        self.listenSocket.connect()
+        self.listenSocket.listen(5)
         while True:
             clientAddr = self.listenSocket.accept(5)
             threading.Thread(target=self.handleConnection, args=(clientAddr,)).start()
 
-    def handleConnection(clientConn):
+    def handleConnection(self, clientConn):
         clientSocket = clientConn[0]
-        clientSocket = clientConn[1]
 
         data = clientSocket.recv(4096)
-        requestVars = parseRequestURL(data)
+        requestVars = self.parseRequestURL(data)
         # for now (legacy symposium demo purposes) we only handle one key and
         # one value (direction=...)
-        self.servercallback(requestVars["direction"])
+        self.serverCallback(requestVars["direction"])
         clientSocket.close()
 
     # takes in the url string and parses out keys and values based on normal
     # POST url formatting (i.e. key=value pairs after first ? in url and key
     # value pairs separated by &)
     # returns a python dictionary with url keys as keys and url values as values
-    def parseRequestURL(url):
-        pairs = url.split('?')[1].split('&')
-        vars = {}
-        for pair in pairs:
-            key = pair.split('=')[0]
-            value = pair.split('=')[1]
-            vars[key] = value
-        return vars
+    def parseRequestURL(self, url):
+        pairs = url.split().split('?').split('=')
+        return {pairs[0]: pairs[1]}
